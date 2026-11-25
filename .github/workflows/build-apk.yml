@@ -86,6 +86,10 @@ jobs:
           print("Logo MAXI FORFAIT installé !")
           PY
 
+      - name: Corriger les icônes adaptatives Android
+        run: |
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
       - name: Construire APK
         run: |
           cd android
