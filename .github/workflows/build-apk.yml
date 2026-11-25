@@ -1,0 +1,63 @@
+name: Construire MAXI FORFAIT APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Télécharger le projet
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Installer Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Préparer Capacitor
+        run: |
+          npm init -y
+          npm install @capacitor/core@6 @capacitor/android@6
+          npm install -D @capacitor/cli@6
+
+      - name: Configurer l'application
+        run: |
+          mkdir www
+          cp index.html www/
+          cp manifest.json www/
+          cp icon-192-1.png www/
+          cp icon-512-1.png www/
+
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "com.consolationcons.maxiforfait",
+            "appName": "MAXI FORFAIT",
+            "webDir": "www"
+          }
+          EOF
+
+          npx cap add android
+          npx cap sync android
+
+      - name: Construire APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Récupérer APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MAXI-FORFAIT-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
