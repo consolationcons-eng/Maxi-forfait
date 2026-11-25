@@ -11,13 +11,13 @@
 "theme_color": "#ff8c00",
 "icons": [
 {
-"src": "/Maxi-forfait/icons/icon-192.png",
+"src": "/Maxi-forfait/icons/icon-192-1.png",
 "sizes": "192x192",
 "type": "image/png",
 "purpose": "any"
 },
 {
-"src": "/Maxi-forfait/icons/icon-512.png",
+"src": "/Maxi-forfait/icons/icon-512-1.png",
 "sizes": "512x512",
 "type": "image/png",
 "purpose": "any"
