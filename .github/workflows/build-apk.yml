@@ -91,13 +91,15 @@ jobs:
           rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
-      - name: Récupérer la clé de signature
+            - name: Récupérer et vérifier la clé de signature
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
           test -n "$KEYSTORE_BASE64"
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/maxiforfait-release.jks
           test -s android/maxiforfait-release.jks
+          keytool -list -keystore android/maxiforfait-release.jks -storepass "$KEYSTORE_PASSWORD"
 
       - name: Configurer la signature Android
         run: |
