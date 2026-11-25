@@ -1,26 +1,23 @@
 {
-"id": "/Maxi-forfait/",
-"name": "MAXI FORFAIT",
-"short_name": "MAXI FORFAIT",
-"description": "Application de gestion et de traitement des demandes de forfaits mobiles.",
-"start_url": "/Maxi-forfait/",
-"scope": "/Maxi-forfait/",
-"display": "standalone",
-"orientation": "portrait",
-"background_color": "#ffffff",
-"theme_color": "#ff8c00",
-"icons": [
-{
-"src": "/Maxi-forfait/icons/icon-192-1.png",
-"sizes": "192x192",
-"type": "image/png",
-"purpose": "any"
-},
-{
-"src": "/Maxi-forfait/icons/icon-512-1.png",
-"sizes": "512x512",
-"type": "image/png",
-"purpose": "any"
-}
-]
+  "id": "/Maxi-forfait/",
+  "name": "MAXI FORFAIT",
+  "short_name": "MAXI FORFAIT",
+  "description": "Application MAXI FORFAIT",
+  "start_url": "/Maxi-forfait/",
+  "scope": "/Maxi-forfait/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ff8c00",
+  "icons": [
+    {
+      "src": "./icon-192-1.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-512-1.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
