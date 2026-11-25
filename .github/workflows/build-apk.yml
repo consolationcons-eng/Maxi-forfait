@@ -14,16 +14,16 @@ jobs:
       - name: Télécharger le projet
         uses: actions/checkout@v4
 
-      - name: Installer Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
       - name: Installer Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
       - name: Préparer Capacitor
         run: |
@@ -31,7 +31,7 @@ jobs:
           npm install @capacitor/core@6 @capacitor/android@6
           npm install -D @capacitor/cli@6
 
-      - name: Configurer l'application
+      - name: Préparer les fichiers
         run: |
           mkdir www
           cp index.html www/
@@ -50,13 +50,49 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Installer Pillow
+        run: pip install Pillow
+
+      - name: Installer le logo comme icône Android
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          import os
+
+          source = Image.open("icon-512-1.png").convert("RGBA")
+
+          folders = {
+              "mdpi": 48,
+              "hdpi": 72,
+              "xhdpi": 96,
+              "xxhdpi": 144,
+              "xxxhdpi": 192
+          }
+
+          base = "android/app/src/main/res"
+
+          for density, size in folders.items():
+              folder = f"{base}/mipmap-{density}"
+              os.makedirs(folder, exist_ok=True)
+
+              icon = source.resize(
+                  (size, size),
+                  Image.Resampling.LANCZOS
+              )
+
+              icon.save(f"{folder}/ic_launcher.png")
+              icon.save(f"{folder}/ic_launcher_round.png")
+
+          print("Logo MAXI FORFAIT installé !")
+          PY
+
       - name: Construire APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Récupérer APK
+      - name: Télécharger APK
         uses: actions/upload-artifact@v4
         with:
           name: MAXI-FORFAIT-APK
