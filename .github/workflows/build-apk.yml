@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Installer Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
@@ -23,7 +23,7 @@ jobs:
       - name: Installer Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
 
       - name: Préparer Capacitor
         run: |
@@ -91,105 +91,14 @@ jobs:
           rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
-      - name: Récupérer et vérifier la clé de signature
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        run: |
-          set -e
-
-          test -n "$KEYSTORE_BASE64"
-          test -n "$KEYSTORE_PASSWORD"
-          test -n "$KEY_ALIAS"
-
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/maxiforfait-release.jks
-
-          test -s android/maxiforfait-release.jks
-
-          keytool -list \
-            -keystore android/maxiforfait-release.jks \
-            -storepass "$KEYSTORE_PASSWORD" \
-            -alias "$KEY_ALIAS"
-
-          echo "Clé de signature vérifiée !"
-
-      - name: Configurer la signature Android
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        run: |
-          python - <<'PY'
-          import re
-
-          path = "android/app/build.gradle"
-
-          with open(path, "r") as f:
-              content = f.read()
-
-          if "signingConfigs {" in content:
-              raise SystemExit("Une configuration de signature existe déjà.")
-
-          signing = """
-          signingConfigs {
-              release {
-                  storeFile file("../maxiforfait-release.jks")
-                  storePassword System.getenv("KEYSTORE_PASSWORD")
-                  keyAlias System.getenv("KEY_ALIAS")
-                  keyPassword System.getenv("KEY_PASSWORD")
-              }
-          }
-
-          """
-
-          pattern = r'(\n[ \t]*)buildTypes\s*\{'
-
-          def insert_signing(match):
-              indent = match.group(1)
-              return indent + signing + indent + "buildTypes {"
-
-          content, count = re.subn(
-              pattern,
-              insert_signing,
-              content,
-              count=1
-          )
-
-          if count != 1:
-              raise SystemExit("Impossible de trouver buildTypes.")
-
-          content, count = re.subn(
-              r'(buildTypes\s*\{\s*release\s*\{)',
-              r'\1\n            signingConfig signingConfigs.release',
-              content,
-              count=1
-          )
-
-          if count != 1:
-              raise SystemExit("Impossible de configurer Release.")
-
-          with open(path, "w") as f:
-              f.write(content)
-
-          print("Signature Android configurée !")
-          PY
-
-      - name: Construire APK Release signé
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      - name: Construire APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease
-
-      - name: Vérifier la signature
-        run: |
-          jarsigner -verify android/app/build/outputs/apk/release/app-release.apk
+          ./gradlew assembleDebug
 
       - name: Télécharger APK final
         uses: actions/upload-artifact@v4
         with:
-          name: MAXI-FORFAIT-APK-RELEASE
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: MAXI-FORFAIT-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
