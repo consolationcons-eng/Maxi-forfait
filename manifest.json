@@ -1,0 +1,12 @@
+{
+  "id": "/Maxi-forfait/",
+  "name": "MAXI FORFAIT",
+  "short_name": "MAXI FORFAIT",
+  "description": "Application de gestion et de traitement des demandes de forfaits mobiles.",
+  "start_url": "/Maxi-forfait/",
+  "scope": "/Maxi-forfait/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#0066cc"
+}
