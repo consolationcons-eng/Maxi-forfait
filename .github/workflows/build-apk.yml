@@ -91,17 +91,34 @@ jobs:
           rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
-            - name: Récupérer et vérifier la clé de signature
+      - name: Récupérer et vérifier la clé de signature
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
+          set -e
+
           test -n "$KEYSTORE_BASE64"
+          test -n "$KEYSTORE_PASSWORD"
+          test -n "$KEY_ALIAS"
+
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/maxiforfait-release.jks
+
           test -s android/maxiforfait-release.jks
-          keytool -list -keystore android/maxiforfait-release.jks -storepass "$KEYSTORE_PASSWORD"
+
+          keytool -list \
+            -keystore android/maxiforfait-release.jks \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -alias "$KEY_ALIAS"
+
+          echo "Clé de signature vérifiée !"
 
       - name: Configurer la signature Android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           python - <<'PY'
           import re
@@ -111,23 +128,30 @@ jobs:
           with open(path, "r") as f:
               content = f.read()
 
-          signing = """
-              signingConfigs {
-                  release {
-                      storeFile file("../maxiforfait-release.jks")
-                      storePassword System.getenv("KEYSTORE_PASSWORD")
-                      keyAlias "maxiforfait"
-                      keyPassword System.getenv("KEY_PASSWORD")
-                  }
-              }
-          """
-
           if "signingConfigs {" in content:
               raise SystemExit("Une configuration de signature existe déjà.")
 
+          signing = """
+          signingConfigs {
+              release {
+                  storeFile file("../maxiforfait-release.jks")
+                  storePassword System.getenv("KEYSTORE_PASSWORD")
+                  keyAlias System.getenv("KEY_ALIAS")
+                  keyPassword System.getenv("KEY_PASSWORD")
+              }
+          }
+
+          """
+
+          pattern = r'(\n[ \t]*)buildTypes\s*\{'
+
+          def insert_signing(match):
+              indent = match.group(1)
+              return indent + signing + indent + "buildTypes {"
+
           content, count = re.subn(
-              r'(\n\s*buildTypes\s*\{)',
-              signing + r'\1',
+              pattern,
+              insert_signing,
               content,
               count=1
           )
