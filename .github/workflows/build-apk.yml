@@ -33,7 +33,7 @@ jobs:
 
       - name: Préparer les fichiers
         run: |
-          mkdir www
+          mkdir -p www
           cp index.html www/
           cp manifest.json www/
           cp icon-192-1.png www/
@@ -53,7 +53,7 @@ jobs:
       - name: Installer Pillow
         run: pip install Pillow
 
-      - name: Installer le logo comme icône Android
+      - name: Installer le logo Android
         run: |
           python - <<'PY'
           from PIL import Image
@@ -86,18 +86,84 @@ jobs:
           print("Logo MAXI FORFAIT installé !")
           PY
 
-      - name: Corriger les icônes adaptatives Android
+      - name: Corriger les icônes adaptatives
         run: |
           rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
-      - name: Construire APK
+
+      - name: Récupérer la clé de signature
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE_BASE64"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/maxiforfait-release.jks
+          test -s android/maxiforfait-release.jks
+
+      - name: Configurer la signature Android
+        run: |
+          python - <<'PY'
+          import re
+
+          path = "android/app/build.gradle"
+
+          with open(path, "r") as f:
+              content = f.read()
+
+          signing = """
+              signingConfigs {
+                  release {
+                      storeFile file("../maxiforfait-release.jks")
+                      storePassword System.getenv("KEYSTORE_PASSWORD")
+                      keyAlias "maxiforfait"
+                      keyPassword System.getenv("KEY_PASSWORD")
+                  }
+              }
+          """
+
+          if "signingConfigs {" in content:
+              raise SystemExit("Une configuration de signature existe déjà.")
+
+          content, count = re.subn(
+              r'(\n\s*buildTypes\s*\{)',
+              signing + r'\1',
+              content,
+              count=1
+          )
+
+          if count != 1:
+              raise SystemExit("Impossible de trouver buildTypes.")
+
+          content, count = re.subn(
+              r'(buildTypes\s*\{\s*release\s*\{)',
+              r'\1\n            signingConfig signingConfigs.release',
+              content,
+              count=1
+          )
+
+          if count != 1:
+              raise SystemExit("Impossible de configurer Release.")
+
+          with open(path, "w") as f:
+              f.write(content)
+
+          print("Signature Android configurée !")
+          PY
+
+      - name: Construire APK Release signé
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
 
-      - name: Télécharger APK
+      - name: Vérifier la signature
+        run: |
+          jarsigner -verify android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Télécharger APK final
         uses: actions/upload-artifact@v4
         with:
-          name: MAXI-FORFAIT-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: MAXI-FORFAIT-APK-RELEASE
+          path: android/app/build/outputs/apk/release/app-release.apk
